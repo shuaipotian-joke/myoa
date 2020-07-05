@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.cwl.mapper.EmployeeCustomMapper" >
+	
+	<resultMap type="com.cwl.pojo.TreePermission" id="PermissionMenuResultMap">
+		<id column="id" property="id"/>
+		<result column="name" property="name"/>
+		<collection property="childrenName" select="getChildrenPermission" column="id">
+			<id column="id" property="id" />
+		    <result column="name" property="name" jdbcType="VARCHAR" />
+		    <result column="type" property="type" jdbcType="VARCHAR" />
+		    <result column="url" property="url" jdbcType="VARCHAR" />
+		    <result column="percode" property="percode" jdbcType="VARCHAR" />
+		    <result column="parentid" property="parentid" jdbcType="BIGINT" />
+		    <result column="parentids" property="parentids" jdbcType="VARCHAR" />
+		    <result column="sortstring" property="sortstring" jdbcType="VARCHAR" />
+		    <result column="available" property="available" jdbcType="CHAR" />
+		</collection>
+	</resultMap>
+	<resultMap type="com.cwl.pojo.SysRole" id="roleAndPermissionResult">
+		<id column="id" property="id" jdbcType="VARCHAR" />
+	    <result column="name" property="name" jdbcType="VARCHAR" />
+	    <result column="available" property="available" jdbcType="CHAR" />
+	    <collection property="permission" ofType="com.cwl.pojo.SysPermission">
+	    	<id column="permission_id" property="id" jdbcType="BIGINT" />
+		    <result column="permission_name" property="name" jdbcType="VARCHAR" />
+		    <result column="type" property="type" jdbcType="VARCHAR" />
+		    <result column="url" property="url" jdbcType="VARCHAR" />
+		    <result column="percode" property="percode" jdbcType="VARCHAR" />
+		    <result column="parentid" property="parentid" jdbcType="BIGINT" />
+		    <result column="parentids" property="parentids" jdbcType="VARCHAR" />
+		    <result column="sortstring" property="sortstring" jdbcType="VARCHAR" />
+		    <result column="available" property="available" jdbcType="CHAR" />
+	    </collection>
+	</resultMap>
+
+	<select id="findUserAndRoleList" resultType="com.cwl.pojo.EmployeeCustom">
+		SELECT e.*,
+			   s1.sys_role_id roleId,
+			   s2.name rolename,
+			   e2.name manager
+	 	FROM employee e
+	 		   INNER JOIN employee e2 ON e.manager_id = e2.id
+	 		   INNER JOIN sys_user_role s1 ON e.name = s1.sys_user_id
+	 		   INNER JOIN sys_role s2 ON s1.sys_role_id = s2.id
+	</select>
+	
+	<select id="findUserRoleByName" resultType="java.lang.String" parameterType="java.lang.String">
+		SELECT s.name FROM sys_role s WHERE s.id=(SELECT role FROM employee WHERE NAME=#{name})
+	</select>
+	
+	<select id="findPermissionAndRoleListByUserId" resultMap="roleAndPermissionResult" parameterType="java.lang.String">
+		SELECT  s1.*,
+			s3.id permission_id,
+			s3.name permission_name,
+			s3.type,
+			s3.url,
+			s3.percode
+		FROM sys_role s1
+	        INNER JOIN sys_role_permission s2 ON  s1.id=s2.sys_role_id
+	        INNER JOIN sys_permission s3 ON  s2.sys_permission_id = s3.id
+	        INNER JOIN sys_user_role s4 ON  s4.sys_role_id=s1.id
+	        INNER JOIN employee e ON  e.name=s4.sys_user_id
+		WHERE e.name=#{name}
+	</select>
+	
+	<select id="findPermissionMenu" resultMap="PermissionMenuResultMap" >
+		select * from sys_permission where parentid=1
+	</select>
+	
+	<select id="getChildrenPermission" resultType="com.cwl.pojo.SysPermission">
+		  select * from sys_permission where parentid=#{id}
+    </select>
+</mapper>
